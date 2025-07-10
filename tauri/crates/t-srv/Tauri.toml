@@ -1,0 +1,15 @@
+identifier   = "com.t"
+product-name = "t"
+version      = "0.1.0"
+
+[build]
+before-build-command = "trunk build --config t-web/Trunk.toml"
+before-dev-command   = "trunk serve --config t-web/Trunk.toml"
+dev-url              = "http://localhost:1420"
+# frontend-dist        = "web/dist"
+# rpc-url              = "http://localhost:3000"
+
+[bundle]
+active  = true
+icon    = ["icons/128x128.png", "icons/128x128@2x.png", "icons/32x32.png", "icons/icon.icns", "icons/icon.ico"]
+targets = "rpm"

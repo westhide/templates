@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package internal;
+
+service InternalRpc {
+    rpc GetUsername (Username) returns (Username);
+}
+
+message Username {
+    string username = 1;
+}

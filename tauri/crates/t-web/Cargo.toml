@@ -1,0 +1,46 @@
+[package]
+name = "t-web"
+
+description = "t-web"
+edition     = { workspace = true }
+license     = { workspace = true }
+version     = { workspace = true }
+
+
+[features]
+default       = ["encoding-gzip"]
+encoding-gzip = ["t-rpc/gzip"]
+
+
+[lints]
+workspace = true
+
+
+[dependencies]
+t-lib = { workspace = true, features = ["tracing-browser"] }
+t-rpc = { workspace = true }
+
+console_error_panic_hook = { workspace = true }
+js-sys                   = { workspace = true }
+leptos                   = { workspace = true, features = ["csr"] }
+serde                    = { workspace = true, features = ["derive"] }
+serde-wasm-bindgen       = { workspace = true }
+wasm-bindgen             = { workspace = true }
+wasm-bindgen-futures     = { workspace = true }
+
+bytes          = { workspace = true }
+futures        = { workspace = true, features = ["alloc"] }
+gloo           = { workspace = true }
+http           = { workspace = true }
+http-body      = { workspace = true }
+http-body-util = { workspace = true }
+nill           = { workspace = true }
+
+thiserror    = { workspace = true }
+tower        = { workspace = true }
+tracing      = { workspace = true }
+wasm-streams = { workspace = true }
+web-sys      = { workspace = true }
+
+
+[build-dependencies]
