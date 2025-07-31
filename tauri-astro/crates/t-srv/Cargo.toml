@@ -25,15 +25,19 @@ workspace = true
 t-lib = { workspace = true, features = ["tonic-transport"] }
 t-rpc = { workspace = true, features = ["router", "transport"] }
 
+chrono              = { workspace = true }
 nill                = { workspace = true }
+reqwest             = { workspace = true, features = ["json"] }
 serde               = { workspace = true, features = ["derive"] }
 serde_json          = { workspace = true }
 tauri               = { version = "2", features = [] }
 tauri-plugin-log    = { version = "2" }
 tauri-plugin-opener = { version = "2" }
+thiserror           = { workspace = true }
 tokio               = { workspace = true, features = ["macros", "net", "rt-multi-thread", "sync"] }
 tower-http          = { workspace = true, features = ["cors", "trace"] }
 tracing             = { workspace = true }
+url                 = { workspace = true }
 
 
 [build-dependencies]

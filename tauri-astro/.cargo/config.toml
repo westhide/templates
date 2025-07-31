@@ -1,9 +1,11 @@
 [env]
 RPC_PROTO_DIR = { value = "proto", relative = true }
 
-MIMALLOC_SHOW_STATS = '1'
-MIMALLOC_VERBOSE    = '1'
-RUST_LOG            = 'trace'
+RUST_LOG = 'trace'
+
+# MIMALLOC_SHOW_STATS = '1'
+# MIMALLOC_VERBOSE    = '1'
+
 
 # [target.x86_64-unknown-linux-gnu]
 # linker    = "clang"
