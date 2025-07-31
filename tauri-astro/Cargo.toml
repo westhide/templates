@@ -14,6 +14,7 @@ version = "0.0.1"
 t-lib = { path = "crates/t-lib", version = "0.0.1" }
 t-rpc = { path = "crates/t-rpc", version = "0.0.1" }
 t-srv = { path = "crates/t-srv", version = "0.0.1" }
+t-web = { path = "crates/t-web", version = "0.0.1" }
 
 # Extern
 bytes                      = { version = "1" }
@@ -23,13 +24,11 @@ gloo                       = { version = "0.11" }
 http                       = { version = "1.3" }
 http-body                  = { version = "1.0" }
 http-body-util             = { version = "0.1" }
-js-sys                     = { version = "0.3" }
 mimalloc                   = { version = "0.1" }
 nill                       = { version = "1.0.0" }
 prost                      = { version = "0.13" }
 rkyv                       = { version = "0.8" }
 serde                      = { version = "1" }
-serde-wasm-bindgen         = { version = "0.6" }
 serde_json                 = { version = "1" }
 thiserror                  = { version = "2.0" }
 tokio                      = { version = "1" }

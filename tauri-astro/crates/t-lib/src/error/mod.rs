@@ -1,3 +1,6 @@
+#[cfg(feature = "wasm-bindgen")]
+pub mod web;
+
 use std::{io::Error as StdIoError, net::AddrParseError as StdNetAddrParseError};
 
 use http::uri::InvalidUri as HttpUriInvalidUri;

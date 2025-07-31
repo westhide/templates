@@ -6,6 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import compressor from "astro-compressor";
 import icon from "astro-icon";
 import imagemin from "unplugin-imagemin/vite";
+import wasm from "vite-plugin-wasm";
 
 // https://astro.build/config
 export default defineConfig({
@@ -15,7 +16,10 @@ export default defineConfig({
         prefetchAll: true,
     },
     integrations: [
-        vue({ jsx: true }),
+        vue({
+            jsx: true,
+            devtools: true
+        }),
         icon({
             iconDir: "src/assets/icons",
         }),
@@ -28,7 +32,11 @@ export default defineConfig({
         preserveScriptOrder: true,
     },
     vite: {
-        plugins: [tailwindcss(), imagemin()],
+        plugins: [
+            tailwindcss(),
+            wasm(),
+            imagemin(),
+        ],
         css: {
             transformer: "lightningcss",
         },

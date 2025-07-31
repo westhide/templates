@@ -16,6 +16,7 @@ default         = []
 mimalloc        = ["dep:mimalloc"]
 tonic-transport = ["tonic/transport"]
 tracing-browser = ["dep:tracing-browser-subscriber"]
+wasm-bindgen    = ["dep:wasm-bindgen"]
 
 
 [lints]
@@ -30,3 +31,4 @@ tonic                      = { workspace = true }
 tracing                    = { workspace = true }
 tracing-browser-subscriber = { workspace = true, optional = true }
 tracing-subscriber         = { workspace = true, features = ["env-filter"] }
+wasm-bindgen               = { workspace = true, optional = true }
