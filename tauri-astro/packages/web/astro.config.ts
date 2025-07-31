@@ -11,6 +11,7 @@ import wasm from "vite-plugin-wasm";
 // https://astro.build/config
 export default defineConfig({
     site: process.env.PUBLIC_SITE_URL,
+    output: 'static',
     prefetch: {
         defaultStrategy: "viewport",
         prefetchAll: true,
