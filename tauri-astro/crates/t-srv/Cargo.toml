@@ -1,0 +1,40 @@
+[package]
+name = "t-srv"
+
+description = "t-srv"
+edition     = { workspace = true }
+license     = { workspace = true }
+version     = { workspace = true }
+
+
+[lib]
+crate-type = ["cdylib", "rlib", "staticlib"]
+
+
+[features]
+default       = ["encoding-gzip", "mimalloc"]
+encoding-gzip = ["t-rpc/gzip"]
+mimalloc      = ["t-lib/mimalloc"]
+
+
+[lints]
+workspace = true
+
+
+[dependencies]
+t-lib = { workspace = true, features = ["tonic-transport"] }
+t-rpc = { workspace = true, features = ["router", "transport"] }
+
+nill                = { workspace = true }
+serde               = { workspace = true, features = ["derive"] }
+serde_json          = { workspace = true }
+tauri               = { version = "2", features = [] }
+tauri-plugin-log    = { version = "2" }
+tauri-plugin-opener = { version = "2" }
+tokio               = { workspace = true, features = ["macros", "net", "rt-multi-thread", "sync"] }
+tower-http          = { workspace = true, features = ["cors", "trace"] }
+tracing             = { workspace = true }
+
+
+[build-dependencies]
+tauri-build = { version = "2", features = ["config-toml"] }

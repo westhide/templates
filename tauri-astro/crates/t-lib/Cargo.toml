@@ -1,0 +1,32 @@
+[package]
+name = "t-lib"
+
+description = "t-lib"
+edition     = { workspace = true }
+license     = { workspace = true }
+version     = { workspace = true }
+
+
+[lib]
+crate-type = ["cdylib", "rlib", "staticlib"]
+
+
+[features]
+default         = []
+mimalloc        = ["dep:mimalloc"]
+tonic-transport = ["tonic/transport"]
+tracing-browser = ["dep:tracing-browser-subscriber"]
+
+
+[lints]
+workspace = true
+
+
+[dependencies]
+http                       = { workspace = true }
+mimalloc                   = { workspace = true, optional = true }
+thiserror                  = { workspace = true }
+tonic                      = { workspace = true }
+tracing                    = { workspace = true }
+tracing-browser-subscriber = { workspace = true, optional = true }
+tracing-subscriber         = { workspace = true, features = ["env-filter"] }

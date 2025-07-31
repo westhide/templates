@@ -1,0 +1,6 @@
+{
+	"emmet.includeLanguages": {
+		"rust": "html"
+	},
+	"nixEnvSelector.nixFile": "${workspaceFolder}/shell.nix"
+}

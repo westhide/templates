@@ -1,0 +1,16 @@
+identifier   = "com.t"
+product-name = "t"
+version      = "0.1.0"
+
+[build]
+dev-url = "http://localhost:4321"
+
+before-build-command = "pnpm build -w ../packages"
+before-dev-command   = "pnpm dev   -w ../packages"
+# frontend-dist        = "web/dist"
+# rpc-url              = "http://localhost:3000"
+
+[bundle]
+active  = true
+icon    = ["icons/128x128.png", "icons/128x128@2x.png", "icons/32x32.png", "icons/icon.icns", "icons/icon.ico"]
+targets = "rpm"
