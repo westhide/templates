@@ -8,7 +8,7 @@ use foundry_block_explorers::Client;
 use nill::{Nil, nil};
 use rand::random_range;
 
-use crate::api::etherscan::error::Result;
+use crate::fetch::etherscan::error::Result;
 
 const API_KEY: &[&str] = &[
     // default
@@ -53,6 +53,37 @@ const API_KEY: &[&str] = &[
     "RW3T58UUIIE3TE66ZRXH4EATKN2GFZN7VB",
     "7TN7C9WME1783WZZYAJSJFRHCR9ZBVUD45",
 ];
+
+pub struct EtherscanClient {
+    pub client: Client,
+}
+
+impl EtherscanClient {
+    pub fn init() -> Client {
+        let idx = random_range(..API_KEY.len());
+        let key = API_KEY[idx];
+        let bsc = Chain::bsc_mainnet();
+        let timeout = Duration::from_secs(30);
+
+        let http = reqwest::ClientBuilder::new()
+            .connect_timeout(timeout)
+            .timeout(timeout)
+            .build()
+            .expect("Http Client");
+
+        Client::builder()
+            .with_api_key(key)
+            .chain(bsc)
+            .expect("Valid BSC Chain")
+            .with_client(http)
+            .build()
+            .expect("Etherscan Client")
+    }
+
+    pub fn new() -> Self {
+        Self { client: Self::init() }
+    }
+}
 
 pub fn get_random() -> Client {
     let idx = random_range(..API_KEY.len());

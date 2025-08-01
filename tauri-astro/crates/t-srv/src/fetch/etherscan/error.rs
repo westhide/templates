@@ -27,4 +27,13 @@ impl From<Error> for t_lib::error::Error {
     }
 }
 
+macro_rules! err {
+    ($($arg:tt)*) => {
+        Err($crate::fetch::etherscan::error::Error::Generic(format!($($arg)*)))
+    }
+}
+
+#[allow(unused_imports)]
+pub(crate) use err;
+
 pub type Result<T, E = Error> = std::result::Result<T, E>;

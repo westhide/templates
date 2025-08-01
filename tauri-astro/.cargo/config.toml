@@ -1,7 +1,7 @@
 [env]
 RPC_PROTO_DIR = { value = "proto", relative = true }
 
-RUST_LOG = 'trace'
+RUST_LOG = 'trace,hyper_util=info'
 
 # MIMALLOC_SHOW_STATS = '1'
 # MIMALLOC_VERBOSE    = '1'
