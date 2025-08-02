@@ -2,7 +2,9 @@ use crate::fetch::{Fetch, etherscan::client::EtherscanClient};
 
 pub mod block;
 pub mod client;
+pub mod contract;
 pub mod error;
+pub mod model;
 pub mod transaction;
 
 pub trait EtherscanFetch {

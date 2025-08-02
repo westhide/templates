@@ -4,6 +4,8 @@ pub mod web;
 use std::{io::Error as StdIoError, net::AddrParseError as StdNetAddrParseError};
 
 use http::uri::InvalidUri as HttpUriInvalidUri;
+#[cfg(feature = "serde_json")]
+use serde_json::Error as SerdeJsonError;
 use tonic::Status as TonicStatus;
 #[cfg(feature = "tonic-transport")]
 use tonic::transport::Error as TonicTransportError;
@@ -25,6 +27,10 @@ pub enum Error {
     #[cfg(feature = "tonic-transport")]
     #[error(transparent)]
     TonicTransportError(#[from] TonicTransportError),
+
+    #[cfg(feature = "serde_json")]
+    #[error(transparent)]
+    SerdeJsonError(#[from] SerdeJsonError),
 
     #[error("{0}")]
     Generic(String),

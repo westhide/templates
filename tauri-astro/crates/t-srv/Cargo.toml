@@ -23,7 +23,7 @@ workspace = true
 
 
 [dependencies]
-t-lib = { workspace = true, features = ["tonic-transport"] }
+t-lib = { workspace = true, features = ["serde_json", "tonic-transport"] }
 t-rpc = { workspace = true, features = ["router", "transport"] }
 
 alloy                   = { workspace = true }

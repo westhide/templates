@@ -1,4 +1,4 @@
-pub mod erc20_token;
+pub mod alpha;
 pub mod etherscan;
 pub mod shutdown;
 pub mod user;

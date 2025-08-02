@@ -23,7 +23,7 @@ axum                       = { version = "0.8" }
 bytes                      = { version = "1" }
 chrono                     = { version = "0.4" }
 console_error_panic_hook   = { version = "0.1" }
-foundry-block-explorers    = { version = "0.20" }
+foundry-block-explorers    = { version = "0.20", git = "https://github.com/neomaxwell/block-explorers.git" }
 futures                    = { version = "0.3" }
 gloo                       = { version = "0.11" }
 http                       = { version = "1.3" }

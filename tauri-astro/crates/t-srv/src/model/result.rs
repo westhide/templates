@@ -74,27 +74,31 @@ where
 
 #[cfg(test)]
 mod tests {
+    use nill::{Nil, nil};
+    use t_lib::error::Result;
+
     use super::*;
 
     #[test]
-    fn test_status() {
-        use Status::{Fail, Ok};
+    fn test_status() -> Result<Nil> {
         use serde_json::{from_str, to_string};
 
-        let code_ok = to_string(&Ok).unwrap();
+        let code_ok = to_string(&Status::Ok)?;
         assert_eq!(code_ok, "0");
 
-        let stat_ok: Status = from_str(&code_ok).unwrap();
-        assert_eq!(stat_ok, Ok);
+        let stat_ok: Status = from_str(&code_ok)?;
+        assert_eq!(stat_ok, Status::Ok);
 
-        let code_fail = to_string(&Fail).unwrap();
+        let code_fail = to_string(&Status::Fail)?;
         assert_eq!(code_fail, "1");
 
-        let stat_fail: Status = from_str(&code_fail).unwrap();
-        assert_eq!(stat_fail, Fail);
+        let stat_fail: Status = from_str(&code_fail)?;
+        assert_eq!(stat_fail, Status::Fail);
 
         let code = format!("{}", Status::MAX + 1);
         let invalid = from_str::<Status>(&code);
-        assert!(invalid.is_err())
+        assert!(invalid.is_err());
+
+        Ok(nil)
     }
 }

@@ -1,25 +1,28 @@
-use foundry_block_explorers::account::{
-    ERC20TokenTransferEvent, Sort, TokenQueryOption, TxListParams,
+use alloy::primitives::Address;
+use foundry_block_explorers::account::{ERC20TokenTransferEvent, TokenQueryOption, TxListParams};
+use serde::{Deserialize, Serialize};
+use t_lib::{
+    extension::optional::Optional,
+    log::{Level, instrument},
 };
-use t_lib::log::{Level, instrument};
 
 use crate::fetch::{
     Fetch, Param,
     etherscan::{
-        client::{EtherscanClient, client},
+        client::EtherscanClient,
         error::{Error, Result},
+        model::pagination::Pagination,
     },
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Params {
-    pub address: String,
-    pub contract: String,
+    pub address: Address,
+    pub contract: Address,
     pub start_block: u64,
     pub end_block: u64,
-    pub page: u64,
-    pub offset: u64,
-    pub sort: Sort,
+    #[serde(default, flatten)]
+    pub pagination: Option<Pagination>,
 }
 
 impl Param for Params {
@@ -33,13 +36,12 @@ impl Fetch<Params> for EtherscanClient {
 
     #[instrument(level = Level::TRACE, skip_all, err, fields(?params))]
     async fn fetch(&mut self, params: Params) -> Result<Self::Ret, Self::Err> {
-        let Params { address, contract, start_block, end_block, page, offset, sort } = params;
+        let Params { address, contract, start_block, end_block, pagination } = params;
 
-        let address = address.parse()?;
-        let contract_address = contract.parse()?;
-        let option = TokenQueryOption::ByAddressAndContract(address, contract_address);
+        let option = TokenQueryOption::ByAddressAndContract(address, contract);
+        let Pagination { page, offset, sort } = Optional::value(pagination);
         let tx_list_params = TxListParams { start_block, end_block, page, offset, sort };
-        let txs = client()?.get_erc20_token_transfer_events(option, Some(tx_list_params)).await?;
+        let txs = self.get_erc20_token_transfer_events(option, Some(tx_list_params)).await?;
         Ok(txs)
     }
 }
@@ -53,18 +55,16 @@ mod tests {
     use crate::fetch::etherscan::EtherscanFetch;
 
     const ADDRESS: &str = "0xcf4f5cbc40ab3c8d8b0bfe752f70bf0916c0d938";
+    const ULTI_TOKEN: &str = "0x0e7779e698052f8fe56c415c3818fcf89de9ac6d";
 
     #[tokio::test]
     async fn test_get_transactions() -> Result<Nil> {
-        const ULTI_TOKEN: &str = "0x0e7779e698052f8fe56c415c3818fcf89de9ac6d";
         let params = Params {
-            address: ADDRESS.into(),
-            contract: ULTI_TOKEN.into(),
+            address: ADDRESS.parse()?,
+            contract: ULTI_TOKEN.parse()?,
             start_block: 55911167,
             end_block: 56045281,
-            page: 0,
-            offset: 1000,
-            sort: Sort::Asc,
+            pagination: None,
         };
         let txs = params.fetch().await?;
 
@@ -72,23 +72,23 @@ mod tests {
             &txs[0],
             { ".confirmations" =>"[confirmations]",},
             @r#"
-        blockNumber: "0x355441c"
-        timeStamp: "1753937753"
-        hash: "0xf04e017634abb40ed16e18b19459c4a968cdb6a56dd9888c63b15530cd57e91d"
-        nonce: "0x259"
-        blockHash: "0x30fbec7cac0953e252a8384a71c6caa3163630833bce29520fe63d909277358c"
+        blockNumber: "0x3554d16"
+        timeStamp: "1753939477"
+        hash: "0xcc55871b93acc94dd0479fe0df3305b1f11153b4b80211a8981d067e4645705e"
+        nonce: "0x28b"
+        blockHash: "0xa426b3caf9e31d494bfac64f8f01d5a93b79cdd2189e2d83c97652d94e7b4169"
         from: "0xcf4f5cbc40ab3c8d8b0bfe752f70bf0916c0d938"
         contractAddress: "0x0e7779e698052f8fe56c415c3818fcf89de9ac6d"
         to: "0xb300000b72deaeb607a12d5f54773d1c19c7028d"
-        value: "0x8f8dc478c2d4ba5d2f00"
+        value: "0x967f24f7aa50c6c55927"
         tokenName: Ultiverse Token
         tokenSymbol: ULTI
         tokenDecimal: "18"
-        transactionIndex: 70
-        gas: "0x522c9"
+        transactionIndex: 54
+        gas: "0x588b6"
         gasPrice: "0x68e7780"
-        gasUsed: "0x2ab14"
-        cumulativeGasUsed: "0x8a9791"
+        gasUsed: "0x2e097"
+        cumulativeGasUsed: "0x770202"
         input: deprecated
         confirmations: "[confirmations]"
         "#

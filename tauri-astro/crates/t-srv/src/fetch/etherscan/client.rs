@@ -1,14 +1,13 @@
 use std::{
-    sync::{LazyLock, RwLock, RwLockReadGuard},
+    ops::{Deref, DerefMut},
     time::Duration,
 };
 
 use alloy_chains::Chain;
 use foundry_block_explorers::Client;
-use nill::{Nil, nil};
 use rand::random_range;
 
-use crate::fetch::etherscan::error::Result;
+// https://api.etherscan.io/v2/api?chainid=56&module=contract&action=getabi&address=0x0e7779e698052f8fe56c415c3818fcf89de9ac6d&apikey=K4SDMH5SKWHRNK6G3PIXH1UTCWS1RND9DN
 
 const API_KEY: &[&str] = &[
     // default
@@ -55,7 +54,7 @@ const API_KEY: &[&str] = &[
 ];
 
 pub struct EtherscanClient {
-    pub client: Client,
+    client: Client,
 }
 
 impl EtherscanClient {
@@ -74,7 +73,7 @@ impl EtherscanClient {
         Client::builder()
             .with_api_key(key)
             .chain(bsc)
-            .expect("Valid BSC Chain")
+            .expect("BSC Chain")
             .with_client(http)
             .build()
             .expect("Etherscan Client")
@@ -85,36 +84,16 @@ impl EtherscanClient {
     }
 }
 
-pub fn get_random() -> Client {
-    let idx = random_range(..API_KEY.len());
-    let key = API_KEY[idx];
-    let bsc = Chain::bsc_mainnet();
-    let timeout = Duration::from_secs(30);
+impl Deref for EtherscanClient {
+    type Target = Client;
 
-    let http = reqwest::ClientBuilder::new()
-        .connect_timeout(timeout)
-        .timeout(timeout)
-        .build()
-        .expect("Http Client");
-
-    Client::builder()
-        .with_api_key(key)
-        .chain(bsc)
-        .expect("Valid BSC Chain")
-        .with_client(http)
-        .build()
-        .expect("Etherscan Client")
+    fn deref(&self) -> &Self::Target {
+        &self.client
+    }
 }
 
-static CLIENT: LazyLock<RwLock<Client>> = LazyLock::new(|| RwLock::new(get_random()));
-
-#[inline]
-pub fn client() -> Result<RwLockReadGuard<'static, Client>> {
-    Ok(CLIENT.read()?)
-}
-
-pub fn refresh() -> Result<Nil> {
-    let mut client = CLIENT.write()?;
-    *client = get_random();
-    Ok(nil)
+impl DerefMut for EtherscanClient {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.client
+    }
 }

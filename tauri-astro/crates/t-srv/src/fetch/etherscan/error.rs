@@ -1,15 +1,25 @@
-use std::sync::PoisonError;
+use std::{io::Error as StdIoError, sync::PoisonError};
 
-use alloy::hex::FromHexError;
+use alloy::{hex::FromHexError, primitives::utils::UnitsError};
 use foundry_block_explorers::errors::EtherscanError;
+use serde_json::Error as SerdeJsonError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error(transparent)]
+    StdIoError(#[from] StdIoError),
+
     #[error(transparent)]
     EtherscanError(#[from] EtherscanError),
 
     #[error(transparent)]
     FromHexError(#[from] FromHexError),
+
+    #[error(transparent)]
+    UnitsError(#[from] UnitsError),
+
+    #[error(transparent)]
+    SerdeJsonError(#[from] SerdeJsonError),
 
     #[error("{0}")]
     Generic(String),

@@ -11,13 +11,11 @@ use crate::fetch::{
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Params {
     pub timestamp: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Data {
     pub block_number: usize,
 }
@@ -34,7 +32,7 @@ impl Fetch<Params> for EtherscanClient {
     #[instrument(level = Level::TRACE, skip_all, err, fields(?params))]
     async fn fetch(&mut self, params: Params) -> Result<Self::Ret, Self::Err> {
         let Params { timestamp } = params;
-        let block = self.client.get_block_by_timestamp(timestamp, "before").await?;
+        let block = self.get_block_by_timestamp(timestamp, "before").await?;
         match block.block_number {
             BlockNumber::Number(num) => Ok(num.to()),
             block_number => err!("BlockNumber isn't number: {block_number}"),

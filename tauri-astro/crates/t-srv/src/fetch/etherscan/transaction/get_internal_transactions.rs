@@ -1,26 +1,28 @@
-use foundry_block_explorers::account::{
-    InternalTransaction, InternalTxQueryOption, Sort, TxListParams,
+use alloy::primitives::Address;
+use foundry_block_explorers::account::{InternalTransaction, InternalTxQueryOption, TxListParams};
+use serde::{Deserialize, Serialize};
+use t_lib::{
+    extension::optional::Optional,
+    log::{Level, instrument},
 };
-use t_lib::log::{Level, instrument};
 
 use crate::fetch::{
     Fetch, Param,
     etherscan::{
-        client::{EtherscanClient, client},
+        client::EtherscanClient,
         error::{Error, Result},
+        model::pagination::Pagination,
     },
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Params {
-    pub address: String,
+    pub address: Address,
     pub start_block: u64,
     pub end_block: u64,
-    pub page: u64,
-    pub offset: u64,
-    pub sort: Sort,
+    #[serde(default, flatten)]
+    pub pagination: Option<Pagination>,
 }
-
 impl Param for Params {
     type Err = Error;
     type Ret = Vec<InternalTransaction>;
@@ -32,13 +34,13 @@ impl Fetch<Params> for EtherscanClient {
 
     #[instrument(level = Level::TRACE, skip_all, err, fields(?params))]
     async fn fetch(&mut self, params: Params) -> Result<Self::Ret, Self::Err> {
-        let Params { address, start_block, end_block, page, offset, sort } = params;
+        let Params { address, start_block, end_block, pagination } = params;
 
-        let address = address.parse()?;
         let option = InternalTxQueryOption::ByAddress(address);
+        let Pagination { page, offset, sort } = Optional::value(pagination);
         let tx_list_params = TxListParams { start_block, end_block, page, offset, sort };
         // FIXME: This API return Maximum 10,000 records
-        let txs = client()?.get_internal_transactions(option, Some(tx_list_params)).await?;
+        let txs = self.get_internal_transactions(option, Some(tx_list_params)).await?;
         Ok(txs)
     }
 }
@@ -56,12 +58,10 @@ mod tests {
     #[tokio::test]
     async fn test_get_transactions() -> Result<Nil> {
         let params = Params {
-            address: ADDRESS.into(),
+            address: ADDRESS.parse()?,
             start_block: 55511167,
             end_block: 56045281,
-            page: 0,
-            offset: 1000,
-            sort: Sort::Asc,
+            pagination: None,
         };
         let txs = params.fetch().await?;
 
