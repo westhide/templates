@@ -7,6 +7,8 @@ use crate::fetch::{
     etherscan::{client::EtherscanClient, error::Error},
 };
 
+pub const ABI_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/fetch/etherscan/contract/abi");
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Params {
     pub contract: Address,
@@ -46,7 +48,9 @@ mod tests {
 
     const ULTI_TOKEN: &str = "0x0e7779e698052f8fe56c415c3818fcf89de9ac6d";
 
-    fn save_abi(path: &str, abi: &JsonAbi) -> Result<Nil> {
+    fn save_abi(name: &str, abi: &JsonAbi) -> Result<Nil> {
+        let path = format!("{ABI_DIR}/{name}.json");
+        println!("{path}");
         let json = serde_json::to_string(&abi)?;
         fs::write(path, json)?;
         Ok(nil)
@@ -58,7 +62,7 @@ mod tests {
         let abi = param.fetch().await?;
 
         assert_debug_snapshot!(&abi);
-        save_abi("abi/ulti.json", &abi)?;
+        save_abi("ULTI", &abi)?;
         Ok(nil)
     }
 }

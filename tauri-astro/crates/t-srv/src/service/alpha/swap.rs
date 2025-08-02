@@ -13,6 +13,12 @@ pub enum Symbol {
     Token(String),
 }
 
+pub enum Metch {}
+
+const SWAP_ROUTES: &[(&str, &str)] = &[("ULTI", "0xe5e8894b")];
+
+static SWAP_ABI_MAP:  LazyLock<HashMap<>> =
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Swap {
     pub symbol: Symbol,
