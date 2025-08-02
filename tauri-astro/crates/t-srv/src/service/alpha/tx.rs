@@ -56,7 +56,7 @@ async fn get_impl(get_token_event: GetTokenTxParams) -> Result<TxData, Error> {
     let mut alpha_tx = Vec::with_capacity(token_tx.len());
     for tx in token_tx {
         debug_assert_eq!(tx.token_symbol, "ULTI");
-        if let Some(swap) = get_swap(&tx, &contract, &normal_tx_map) {
+        if let Some(swap) = get_swap(&tx, &contract, &normal_tx_map)? {
             let hash = tx.hash;
             let from = tx.from;
             let to = tx.to;

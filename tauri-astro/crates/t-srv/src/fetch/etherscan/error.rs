@@ -1,6 +1,8 @@
-use std::{io::Error as StdIoError, sync::PoisonError};
+use std::{env::VarError as StdEnvVarError, io::Error as StdIoError, sync::PoisonError};
 
-use alloy::{hex::FromHexError, primitives::utils::UnitsError};
+use alloy::{
+    hex::FromHexError, primitives::utils::UnitsError, sol_types::Error as AlloySolTypesError,
+};
 use foundry_block_explorers::errors::EtherscanError;
 use serde_json::Error as SerdeJsonError;
 
@@ -10,7 +12,13 @@ pub enum Error {
     StdIoError(#[from] StdIoError),
 
     #[error(transparent)]
+    StdEnvVarError(#[from] StdEnvVarError),
+
+    #[error(transparent)]
     EtherscanError(#[from] EtherscanError),
+
+    #[error(transparent)]
+    AlloySolTypesError(#[from] AlloySolTypesError),
 
     #[error(transparent)]
     FromHexError(#[from] FromHexError),

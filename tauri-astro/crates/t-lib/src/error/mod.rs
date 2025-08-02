@@ -1,7 +1,10 @@
 #[cfg(feature = "wasm-bindgen")]
 pub mod web;
 
-use std::{io::Error as StdIoError, net::AddrParseError as StdNetAddrParseError};
+use std::{
+    env::VarError as StdEnvVarError, io::Error as StdIoError,
+    net::AddrParseError as StdNetAddrParseError,
+};
 
 use http::uri::InvalidUri as HttpUriInvalidUri;
 #[cfg(feature = "serde_json")]
@@ -14,6 +17,9 @@ use tonic::transport::Error as TonicTransportError;
 pub enum Error {
     #[error(transparent)]
     StdIoError(#[from] StdIoError),
+
+    #[error(transparent)]
+    StdEnvVarError(#[from] StdEnvVarError),
 
     #[error(transparent)]
     StdNetAddrParseError(#[from] StdNetAddrParseError),

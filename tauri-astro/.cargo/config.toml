@@ -1,5 +1,6 @@
 [env]
-RPC_PROTO_DIR = { value = "proto", relative = true }
+CONTRACT_ABI_DIR = { value = "crates/t-srv/src/share/contract", relative = true }
+RPC_PROTO_DIR    = { value = "proto", relative = true }
 
 RUST_LOG = 'trace,hyper_util=info'
 

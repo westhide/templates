@@ -2,8 +2,8 @@ use alloy::primitives::Address;
 use foundry_block_explorers::account::{InternalTransaction, InternalTxQueryOption, TxListParams};
 use serde::{Deserialize, Serialize};
 use t_lib::{
-    extension::optional::Optional,
     log::{Level, instrument},
+    share::optional::Optional,
 };
 
 use crate::fetch::{
