@@ -2,9 +2,9 @@ use alloy::{json_abi::JsonAbi, primitives::Address};
 use serde::{Deserialize, Serialize};
 use t_lib::log::{Level, instrument};
 
-use crate::fetch::{
-    Fetch, Param,
-    etherscan::{client::EtherscanClient, error::Error},
+use crate::{
+    error::Error,
+    fetch::{Fetch, Param, etherscan::client::Etherscan},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ impl Param for Params {
     type Ret = JsonAbi;
 }
 
-impl Fetch<Params> for EtherscanClient {
+impl Fetch<Params> for Etherscan {
     type Err = <Params as Param>::Err;
     type Ret = <Params as Param>::Ret;
 
@@ -41,13 +41,13 @@ mod tests {
     use nill::{Nil, nil};
 
     use super::*;
-    use crate::fetch::etherscan::{EtherscanFetch, error::Result};
+    use crate::fetch::etherscan::EtherscanFetch;
 
     const ULTI_TOKEN: &str = "0x0e7779e698052f8fe56c415c3818fcf89de9ac6d";
     const PROXY_SWAP_V2: &str = "0xb300000b72deaeb607a12d5f54773d1c19c7028d";
 
     #[tokio::test]
-    async fn test_get_abi_ulti() -> Result<Nil> {
+    async fn test_get_abi_ulti() -> Result<Nil, Error> {
         let param = Params { contract: ULTI_TOKEN.parse()? };
         let abi = param.fetch().await?;
         let json = serde_json::to_string(&abi)?;
@@ -61,7 +61,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_abi_proxy_swap_v2() -> Result<Nil> {
+    async fn test_get_abi_proxy_swap_v2() -> Result<Nil, Error> {
         let param = Params { contract: PROXY_SWAP_V2.parse()? };
         let abi = param.fetch().await?;
         let json = serde_json::to_string(&abi)?;

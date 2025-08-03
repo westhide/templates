@@ -3,15 +3,14 @@ use foundry_block_explorers::account::{InternalTransaction, InternalTxQueryOptio
 use serde::{Deserialize, Serialize};
 use t_lib::{
     log::{Level, instrument},
-    share::optional::Optional,
+    share::optional::DefaultOption,
 };
 
-use crate::fetch::{
-    Fetch, Param,
-    etherscan::{
-        client::EtherscanClient,
-        error::{Error, Result},
-        model::pagination::Pagination,
+use crate::{
+    error::Error,
+    fetch::{
+        Fetch, Param,
+        etherscan::{client::Etherscan, model::pagination::Pagination},
     },
 };
 
@@ -28,7 +27,7 @@ impl Param for Params {
     type Ret = Vec<InternalTransaction>;
 }
 
-impl Fetch<Params> for EtherscanClient {
+impl Fetch<Params> for Etherscan {
     type Err = <Params as Param>::Err;
     type Ret = <Params as Param>::Ret;
 
@@ -37,7 +36,7 @@ impl Fetch<Params> for EtherscanClient {
         let Params { address, start_block, end_block, pagination } = params;
 
         let option = InternalTxQueryOption::ByAddress(address);
-        let Pagination { page, offset, sort } = Optional::value(pagination);
+        let Pagination { page, offset, sort } = DefaultOption::into(pagination);
         let tx_list_params = TxListParams { start_block, end_block, page, offset, sort };
         // FIXME: This API return Maximum 10,000 records
         let txs = self.get_internal_transactions(option, Some(tx_list_params)).await?;
@@ -56,7 +55,7 @@ mod tests {
     const ADDRESS: &str = "0xcf4f5cbc40ab3c8d8b0bfe752f70bf0916c0d938";
 
     #[tokio::test]
-    async fn test_get_transactions() -> Result<Nil> {
+    async fn test_get_transactions() -> Result<Nil, Error> {
         let params = Params {
             address: ADDRESS.parse()?,
             start_block: 55511167,

@@ -3,8 +3,10 @@ use std::{env::VarError as StdEnvVarError, io::Error as StdIoError, sync::Poison
 use alloy::{
     hex::FromHexError, primitives::utils::UnitsError, sol_types::Error as AlloySolTypesError,
 };
+use axum::response::{IntoResponse, Response};
 use foundry_block_explorers::errors::EtherscanError;
 use serde_json::Error as SerdeJsonError;
+use t_lib::error::Error as TLibError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -39,15 +41,21 @@ impl<T> From<PoisonError<T>> for Error {
     }
 }
 
-impl From<Error> for t_lib::error::Error {
+impl From<Error> for TLibError {
     fn from(err: Error) -> Self {
         Self::Generic(err.to_string())
     }
 }
 
+impl IntoResponse for Error {
+    fn into_response(self) -> Response {
+        todo!()
+    }
+}
+
 macro_rules! err {
     ($($arg:tt)*) => {
-        Err($crate::fetch::etherscan::error::Error::Generic(format!($($arg)*)))
+        Err($crate::error::Error::Generic(format!($($arg)*)))
     }
 }
 

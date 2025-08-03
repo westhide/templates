@@ -3,15 +3,14 @@ use foundry_block_explorers::account::{ERC20TokenTransferEvent, TokenQueryOption
 use serde::{Deserialize, Serialize};
 use t_lib::{
     log::{Level, instrument},
-    share::optional::Optional,
+    share::optional::DefaultOption,
 };
 
-use crate::fetch::{
-    Fetch, Param,
-    etherscan::{
-        client::EtherscanClient,
-        error::{Error, Result},
-        model::pagination::Pagination,
+use crate::{
+    error::Error,
+    fetch::{
+        Fetch, Param,
+        etherscan::{client::Etherscan, model::pagination::Pagination},
     },
 };
 
@@ -30,7 +29,7 @@ impl Param for Params {
     type Ret = Vec<ERC20TokenTransferEvent>;
 }
 
-impl Fetch<Params> for EtherscanClient {
+impl Fetch<Params> for Etherscan {
     type Err = <Params as Param>::Err;
     type Ret = <Params as Param>::Ret;
 
@@ -39,7 +38,7 @@ impl Fetch<Params> for EtherscanClient {
         let Params { address, contract, start_block, end_block, pagination } = params;
 
         let option = TokenQueryOption::ByAddressAndContract(address, contract);
-        let Pagination { page, offset, sort } = Optional::value(pagination);
+        let Pagination { page, offset, sort } = DefaultOption::into(pagination);
         let tx_list_params = TxListParams { start_block, end_block, page, offset, sort };
         let txs = self.get_erc20_token_transfer_events(option, Some(tx_list_params)).await?;
         Ok(txs)
@@ -58,7 +57,7 @@ mod tests {
     const ULTI_TOKEN: &str = "0x0e7779e698052f8fe56c415c3818fcf89de9ac6d";
 
     #[tokio::test]
-    async fn test_get_transactions() -> Result<Nil> {
+    async fn test_get_transactions() -> Result<Nil, Error> {
         let params = Params {
             address: ADDRESS.parse()?,
             contract: ULTI_TOKEN.parse()?,
@@ -70,7 +69,7 @@ mod tests {
 
         assert_yaml_snapshot!(
             &txs[0],
-            { ".confirmations" =>"[confirmations]",},
+            { ".confirmations" => "[confirmations]", },
             @r#"
         blockNumber: "0x3554d16"
         timeStamp: "1753939477"
@@ -93,6 +92,7 @@ mod tests {
         confirmations: "[confirmations]"
         "#
         );
+        assert_eq!(txs.len(), 52);
         Ok(nil)
     }
 }

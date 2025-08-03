@@ -1,6 +1,12 @@
-use std::{error::Error, mem};
+use std::{error::Error as StdError, mem};
 
+use axum::{
+    Json,
+    response::{IntoResponse, Response},
+};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+
+use crate::error::Error;
 
 #[derive(Debug, PartialEq)]
 #[repr(u8)]
@@ -44,6 +50,7 @@ impl<'de> Deserialize<'de> for Status {
 pub struct Data<T> {
     pub status: Status,
     pub data: Option<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cause: Option<String>,
 }
 
@@ -54,15 +61,24 @@ impl<T> Data<T> {
 
     pub fn fail<E>(err: E) -> Self
     where
-        E: Error,
+        E: StdError,
     {
         Self { status: Status::Fail, data: None, cause: Some(err.to_string()) }
     }
 }
 
+impl<T> From<T> for Data<T>
+where
+    T: Serialize,
+{
+    fn from(data: T) -> Self {
+        Self::new(data)
+    }
+}
+
 impl<T, E> From<Result<T, E>> for Data<T>
 where
-    E: Error,
+    E: StdError,
 {
     fn from(result: Result<T, E>) -> Self {
         match result {
@@ -72,12 +88,23 @@ where
     }
 }
 
+impl<T> IntoResponse for Data<T>
+where
+    T: Serialize,
+{
+    fn into_response(self) -> Response {
+        Json(self).into_response()
+    }
+}
+
+pub type ResultData<T, E = Error> = Result<Data<T>, E>;
+
 #[cfg(test)]
 mod tests {
     use nill::{Nil, nil};
-    use t_lib::error::Result;
 
     use super::*;
+    use crate::error::Result;
 
     #[test]
     fn test_status() -> Result<Nil> {

@@ -2,12 +2,9 @@ use foundry_block_explorers::block_number::BlockNumber;
 use serde::{Deserialize, Serialize};
 use t_lib::log::{Level, instrument};
 
-use crate::fetch::{
-    Fetch, Param,
-    etherscan::{
-        client::EtherscanClient,
-        error::{Error, err},
-    },
+use crate::{
+    error::{Error, err},
+    fetch::{Fetch, Param, etherscan::client::Etherscan},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,7 +22,7 @@ impl Param for Params {
     type Ret = u64;
 }
 
-impl Fetch<Params> for EtherscanClient {
+impl Fetch<Params> for Etherscan {
     type Err = <Params as Param>::Err;
     type Ret = <Params as Param>::Ret;
 
@@ -48,7 +45,7 @@ mod tests {
     use crate::fetch::etherscan::EtherscanFetch;
 
     #[tokio::test]
-    async fn test_get_block_by_timestamp() -> Result<Nil, Error> {
+    async fn test_get_block_number() -> Result<Nil, Error> {
         let param = Params { timestamp: 1754024487 };
         let block_number = param.fetch().await?;
 

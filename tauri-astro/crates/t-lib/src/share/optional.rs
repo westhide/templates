@@ -1,12 +1,12 @@
-pub trait Optional<T> {
-    fn value(self) -> T;
+pub trait DefaultOption<T> {
+    fn into(self) -> T;
 }
 
-impl<T> Optional<T> for Option<T>
+impl<T> DefaultOption<T> for Option<T>
 where
     T: Default,
 {
-    fn value(self) -> T {
+    fn into(self) -> T {
         match self {
             Some(value) => value,
             None => T::default(),

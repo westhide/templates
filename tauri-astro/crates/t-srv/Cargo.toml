@@ -41,6 +41,7 @@ tauri-plugin-log        = { version = "2" }
 tauri-plugin-opener     = { version = "2" }
 thiserror               = { workspace = true }
 tokio                   = { workspace = true, features = ["macros", "net", "rt-multi-thread", "signal", "sync"] }
+tower                   = { workspace = true, features = ["full"] }
 tower-http              = { workspace = true, features = ["cors", "trace"] }
 tracing                 = { workspace = true }
 

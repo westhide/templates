@@ -53,12 +53,13 @@ const API_KEY: &[&str] = &[
     "7TN7C9WME1783WZZYAJSJFRHCR9ZBVUD45",
 ];
 
-pub struct EtherscanClient {
+#[derive(Debug)]
+pub struct Etherscan {
     client: Client,
 }
 
-impl EtherscanClient {
-    pub fn init() -> Client {
+impl Default for Etherscan {
+    fn default() -> Self {
         let idx = random_range(..API_KEY.len());
         let key = API_KEY[idx];
         let bsc = Chain::bsc_mainnet();
@@ -70,21 +71,29 @@ impl EtherscanClient {
             .build()
             .expect("Http Client");
 
-        Client::builder()
+        let client = Client::builder()
             .with_api_key(key)
             .chain(bsc)
             .expect("BSC Chain")
             .with_client(http)
             .build()
-            .expect("Etherscan Client")
-    }
+            .expect("Etherscan Client");
 
-    pub fn new() -> Self {
-        Self { client: Self::init() }
+        Self { client }
     }
 }
 
-impl Deref for EtherscanClient {
+impl Etherscan {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn refresh(&mut self) {
+        *self = Self::default();
+    }
+}
+
+impl Deref for Etherscan {
     type Target = Client;
 
     fn deref(&self) -> &Self::Target {
@@ -92,7 +101,7 @@ impl Deref for EtherscanClient {
     }
 }
 
-impl DerefMut for EtherscanClient {
+impl DerefMut for Etherscan {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.client
     }

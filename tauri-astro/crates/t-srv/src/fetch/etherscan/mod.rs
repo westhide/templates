@@ -1,9 +1,8 @@
-use crate::fetch::{Fetch, etherscan::client::EtherscanClient};
+use crate::fetch::{Fetch, etherscan::client::Etherscan};
 
 pub mod block;
 pub mod client;
 pub mod contract;
-pub mod error;
 pub mod model;
 pub mod transaction;
 
@@ -17,12 +16,12 @@ pub trait EtherscanFetch {
 
 impl<T> EtherscanFetch for T
 where
-    EtherscanClient: Fetch<Self>,
+    Etherscan: Fetch<Self>,
 {
-    type Err = <EtherscanClient as Fetch<Self>>::Err;
-    type Ret = <EtherscanClient as Fetch<Self>>::Ret;
+    type Err = <Etherscan as Fetch<Self>>::Err;
+    type Ret = <Etherscan as Fetch<Self>>::Ret;
 
     async fn fetch(self) -> Result<Self::Ret, Self::Err> {
-        EtherscanClient::new().fetch(self).await
+        Etherscan::new().fetch(self).await
     }
 }
