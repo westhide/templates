@@ -1,7 +1,7 @@
 use foundry_block_explorers::account::Sort;
 use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, serde::Deserialize)]
 pub struct Pagination {
     pub page: u64,
     pub offset: u64,

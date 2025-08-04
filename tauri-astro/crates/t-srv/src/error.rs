@@ -4,9 +4,15 @@ use alloy::{
     hex::FromHexError, primitives::utils::UnitsError, sol_types::Error as AlloySolTypesError,
 };
 use axum::response::{IntoResponse, Response};
+use chrono::ParseError as ChronoParseError;
+use config::ConfigError;
 use foundry_block_explorers::errors::EtherscanError;
+use nill::Nil;
 use serde_json::Error as SerdeJsonError;
 use t_lib::error::Error as TLibError;
+use tokio::task::JoinError as TokioTaskJoinError;
+
+use crate::model::result::Data;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -15,6 +21,12 @@ pub enum Error {
 
     #[error(transparent)]
     StdEnvVarError(#[from] StdEnvVarError),
+
+    #[error(transparent)]
+    TokioTaskJoinError(#[from] TokioTaskJoinError),
+
+    #[error(transparent)]
+    ConfigError(#[from] ConfigError),
 
     #[error(transparent)]
     EtherscanError(#[from] EtherscanError),
@@ -30,6 +42,9 @@ pub enum Error {
 
     #[error(transparent)]
     SerdeJsonError(#[from] SerdeJsonError),
+
+    #[error(transparent)]
+    ChronoParseError(#[from] ChronoParseError),
 
     #[error("{0}")]
     Generic(String),
@@ -49,7 +64,7 @@ impl From<Error> for TLibError {
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        todo!()
+        Data::<Nil>::fail(self).into_response()
     }
 }
 

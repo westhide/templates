@@ -8,5 +8,5 @@ pub mod model;
 pub mod routes;
 pub mod service;
 pub mod share;
-pub mod trpc;
+// pub mod trpc;
 pub mod tsrv;

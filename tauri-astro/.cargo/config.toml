@@ -1,8 +1,10 @@
 [env]
-CONTRACT_ABI_DIR = { value = "crates/t-srv/src/share/contract", relative = true }
-RPC_PROTO_DIR    = { value = "proto", relative = true }
+RPC_PROTO_DIR = { value = "proto", relative = true }
 
-RUST_LOG = 'trace,hyper_util=info'
+CONFIG_FILE      = { value = "crates/t-srv/src/share/config.toml", relative = true }
+CONTRACT_ABI_DIR = { value = "crates/t-srv/src/share/contract", relative = true }
+
+RUST_LOG = 'trace,hyper_util=info,reqwest=info'
 
 # MIMALLOC_SHOW_STATS = '1'
 # MIMALLOC_VERBOSE    = '1'
