@@ -10,6 +10,7 @@ use crate::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Params {
     pub timestamp: u64,
+    pub closest: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,8 +29,8 @@ impl Fetch<Params> for Etherscan {
 
     #[instrument(level = Level::TRACE, skip_all, err, fields(?params))]
     async fn fetch(&mut self, params: Params) -> Result<Self::Ret, Self::Err> {
-        let Params { timestamp } = params;
-        let block = self.get_block_by_timestamp(timestamp, "before").await?;
+        let Params { timestamp, closest } = params;
+        let block = self.get_block_by_timestamp(timestamp, &closest).await?;
         match block.block_number {
             BlockNumber::Number(num) => Ok(num.to()),
             block_number => err!("BlockNumber isn't number: {block_number}"),
@@ -46,7 +47,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_block_number() -> Result<Nil, Error> {
-        let param = Params { timestamp: 1754024487 };
+        let param = Params { timestamp: 1754024487, closest: "before".into() };
         let block_number = param.fetch().await?;
 
         assert_eq!(block_number, 56035281);

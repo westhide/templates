@@ -1,4 +1,6 @@
-use chrono::{DateTime, FixedOffset, MappedLocalTime, NaiveDate, TimeZone, offset::LocalResult};
+use chrono::{
+    DateTime, FixedOffset, MappedLocalTime, NaiveDate, TimeZone, Utc, offset::LocalResult,
+};
 
 use crate::error::{Result, err};
 
@@ -29,11 +31,23 @@ where
     }
 }
 
+#[inline]
+pub fn current_time() -> DateTime<FixedOffset> {
+    Utc::now().with_timezone(&TZ)
+}
+
+#[inline]
+pub fn current_date() -> NaiveDate {
+    current_time().date_naive()
+}
+
+#[inline]
 pub fn parse_date(s: &str) -> Result<NaiveDate> {
     let local = NaiveDate::parse_from_str(&s, "%Y-%m-%d")?;
     Ok(local)
 }
 
+#[inline]
 pub fn get_date_time(date: &NaiveDate, hour: u32, min: u32, sec: u32) -> Result<u64> {
     match date.and_hms_opt(hour, min, sec) {
         Some(local) => TZ.from_local_datetime(&local).into_time(),

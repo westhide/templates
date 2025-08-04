@@ -1,45 +1,29 @@
 use axum::extract::Query;
+use serde::Serialize;
 
-use crate::{
-    fetch::{
-        Param,
-        etherscan::{
-            EtherscanFetch,
-            block::get_number::Params as GetBlockNumberParams,
-            transaction::{
-                get_erc20_token_transfer_events::Params as GetTokenTxParams,
-                get_internal_transactions::Params as GetInternalTxParams,
-                get_transactions::Params as GetNormalTxParams,
-            },
-        },
+pub use crate::fetch::etherscan::{
+    block::get_number::Params as GetBlockNumber,
+    transaction::{
+        get_erc20_token_transfer_events::Params as GetTokenTx,
+        get_internal_transactions::Params as GetInternalTx,
+        get_transactions::Params as GetNormalTx,
     },
-    model::result::ResultData,
 };
+use crate::{fetch::etherscan::EtherscanFetch, model::result::Data};
 
-pub async fn get_block_number(
-    Query(params): Query<GetBlockNumberParams>,
-) -> ResultData<<GetBlockNumberParams as Param>::Ret> {
-    let data = params.fetch().await?;
-    Ok(data.into())
+pub type FetchData<T> = Result<Data<<T as EtherscanFetch>::Ret>, <T as EtherscanFetch>::Err>;
+
+pub trait EtherscanGet: EtherscanFetch + Sized {
+    fn get(_: Query<Self>) -> impl Future<Output = FetchData<Self>>;
 }
 
-pub async fn get_normal_tx(
-    Query(params): Query<GetNormalTxParams>,
-) -> ResultData<<GetNormalTxParams as Param>::Ret> {
-    let data = params.fetch().await?;
-    Ok(data.into())
-}
-
-pub async fn get_internal_tx(
-    Query(params): Query<GetInternalTxParams>,
-) -> ResultData<<GetInternalTxParams as Param>::Ret> {
-    let data = params.fetch().await?;
-    Ok(data.into())
-}
-
-pub async fn get_token_tx(
-    Query(params): Query<GetTokenTxParams>,
-) -> ResultData<<GetTokenTxParams as Param>::Ret> {
-    let data = params.fetch().await?;
-    Ok(data.into())
+impl<T> EtherscanGet for T
+where
+    T: EtherscanFetch,
+    <T as EtherscanFetch>::Ret: Serialize,
+{
+    async fn get(Query(params): Query<Self>) -> FetchData<Self> {
+        let data = params.fetch().await?;
+        Ok(data.into())
+    }
 }

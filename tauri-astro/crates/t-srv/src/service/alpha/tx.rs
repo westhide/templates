@@ -16,17 +16,17 @@ use crate::{
     error::{Error, Result, err},
     fetch::etherscan::{
         EtherscanFetch,
-        block::get_number::Params as GetBlockNumberParams,
+        block::get_number::Params as GetBlockNumber,
         model::pagination::Pagination,
         transaction::{
-            get_erc20_token_transfer_events::Params as GetTokenTxParams,
-            get_transactions::Params as GetNormalTxParams,
+            get_erc20_token_transfer_events::Params as GetTokenTx,
+            get_transactions::Params as GetNormalTx,
         },
     },
     model::result::ResultData,
     share::{
         contract::proxy_swap_v2::ProxySwapV2,
-        datetime::{get_date_time, parse_date},
+        datetime::{current_date, current_time, get_date_time, parse_date},
     },
 };
 
@@ -168,10 +168,10 @@ pub struct Data {
     total: Units,
 }
 
-async fn get_data(params: GetTokenTxParams) -> Result<Data> {
-    let GetTokenTxParams { address, contract, start_block, end_block, pagination } = params.clone();
+async fn get_data(params: GetTokenTx) -> Result<Data> {
+    let GetTokenTx { address, contract, start_block, end_block, pagination } = params.clone();
 
-    let get_normal_tx = GetNormalTxParams { address, start_block, end_block, pagination };
+    let get_normal_tx = GetNormalTx { address, start_block, end_block, pagination };
 
     let raw_token_tx = params.fetch().await?;
 
@@ -238,7 +238,7 @@ async fn get_data(params: GetTokenTxParams) -> Result<Data> {
 }
 
 #[instrument(level = Level::TRACE, skip_all, err)]
-pub async fn get_tx(Query(params): Query<GetTokenTxParams>) -> ResultData<Data> {
+pub async fn get_tx(Query(params): Query<GetTokenTx>) -> ResultData<Data> {
     let data = get_data(params).await?;
     Ok(data.into())
 }
@@ -253,8 +253,7 @@ pub async fn get_tx_by_date_range(
 
     let mut tx_map = HashMap::new();
     for (date, start_block, end_block) in ranges {
-        let get_token_tx =
-            GetTokenTxParams { address, contract, start_block, end_block, pagination };
+        let get_token_tx = GetTokenTx { address, contract, start_block, end_block, pagination };
         let data = get_data(get_token_tx).await?;
         tx_map.insert(date, data);
     }
@@ -262,7 +261,7 @@ pub async fn get_tx_by_date_range(
 }
 
 #[instrument(level = Level::TRACE, skip_all, err)]
-pub async fn get_total_usdt_unit(Query(params): Query<GetTokenTxParams>) -> ResultData<String> {
+pub async fn get_total_usdt_unit(Query(params): Query<GetTokenTx>) -> ResultData<String> {
     let data = get_data(params).await?;
     Ok(data.total.value.into())
 }
@@ -282,13 +281,14 @@ impl GetTokenTxByDate {
         let from_time = get_date_time(date, 0, 0, 0)?;
         let mut into_time = get_date_time(date, 23, 59, 59)?;
 
-        let now = Utc::now().timestamp() as u64;
+        let now = current_time().timestamp() as u64;
         if into_time > now {
             into_time = now
         }
 
-        let from = GetBlockNumberParams { timestamp: from_time }.fetch().await?;
-        let into = GetBlockNumberParams { timestamp: into_time }.fetch().await?;
+        let from =
+            GetBlockNumber { timestamp: from_time, closest: "before".into() }.fetch().await?;
+        let into = GetBlockNumber { timestamp: into_time, closest: "after".into() }.fetch().await?;
         let date_fmt = format!("{}", date.format("%Y-%m-%d"));
         Ok((date_fmt, from, into))
     }
@@ -297,7 +297,7 @@ impl GetTokenTxByDate {
         let from = parse_date(&self.start_date)?;
         let into = parse_date(&self.end_date)?;
 
-        let current_date = Local::now().date_naive();
+        let current_date = current_date();
         if into > current_date {
             return err!("Invalid end_date: {into}, Current: {current_date:?}");
         }
@@ -339,8 +339,7 @@ pub async fn get_total_usdt_unit_by_date_range(
     let mut handler: JoinSet<Result<(String, String)>> = JoinSet::new();
     for (date, start_block, end_block) in ranges {
         handler.spawn(async move {
-            let get_token_tx =
-                GetTokenTxParams { address, contract, start_block, end_block, pagination };
+            let get_token_tx = GetTokenTx { address, contract, start_block, end_block, pagination };
 
             trace!("Get date: {date:?} transaction");
             let data = get_data(get_token_tx).await?;
