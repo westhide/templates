@@ -3846,6 +3846,7 @@ dependencies = [
  "chrono",
  "config",
  "foundry-block-explorers",
+ "indexmap 2.10.0",
  "insta",
  "nill",
  "rand 0.9.2",

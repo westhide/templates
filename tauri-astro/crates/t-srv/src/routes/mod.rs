@@ -1,7 +1,7 @@
-use axum::{Router, ServiceExt, response::Html, routing::get};
+use axum::{Router, response::Html, routing::get};
 
 use crate::{
-    middleware::{cors::cors, error},
+    middleware::cors::cors,
     service::{
         alpha,
         etherscan::{EtherscanGet, GetBlockNumber, GetInternalTx, GetNormalTx, GetTokenTx},

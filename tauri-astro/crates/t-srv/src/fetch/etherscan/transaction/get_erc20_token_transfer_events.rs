@@ -47,20 +47,21 @@ impl Fetch<Params> for Etherscan {
 
 #[cfg(test)]
 mod tests {
+    use alloy::primitives::address;
     use insta::assert_yaml_snapshot;
     use nill::{Nil, nil};
 
     use super::*;
     use crate::fetch::etherscan::EtherscanFetch;
 
-    const ADDRESS: &str = "0xcf4f5cbc40ab3c8d8b0bfe752f70bf0916c0d938";
-    const ULTI_TOKEN: &str = "0x0e7779e698052f8fe56c415c3818fcf89de9ac6d";
+    const ADDRESS: Address = address!("0xcf4f5cbc40ab3c8d8b0bfe752f70bf0916c0d938");
+    const ULTI_TOKEN: Address = address!("0x0e7779e698052f8fe56c415c3818fcf89de9ac6d");
 
     #[tokio::test]
     async fn test_get_transactions() -> Result<Nil, Error> {
         let params = Params {
-            address: ADDRESS.parse()?,
-            contract: ULTI_TOKEN.parse()?,
+            address: ADDRESS,
+            contract: ULTI_TOKEN,
             start_block: 55911167,
             end_block: 56045281,
             pagination: None,

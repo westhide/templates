@@ -1,2 +1,1 @@
 [env]
-CONTRACT_ABI_DIR = { value = "share/contract", relative = true }

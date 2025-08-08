@@ -1,8 +1,8 @@
 [env]
 RPC_PROTO_DIR = { value = "proto", relative = true }
 
-CONFIG_FILE      = { value = "crates/t-srv/src/share/config.toml", relative = true }
-CONTRACT_ABI_DIR = { value = "crates/t-srv/src/share/contract", relative = true }
+CONFIG_FILE    = { value = "crates/t-srv/src/share/config.toml", relative = true }
+TSRV_SHARE_DIR = { value = "crates/t-srv/src/share", relative = true }
 
 RUST_LOG = 'trace,hyper_util=info,reqwest=info'
 

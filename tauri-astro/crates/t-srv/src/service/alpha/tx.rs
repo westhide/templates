@@ -6,8 +6,9 @@ use alloy::{
     sol_types::SolCall,
 };
 use axum::extract::Query;
-use chrono::{Local, NaiveDate, Utc};
+use chrono::NaiveDate;
 use foundry_block_explorers::account::{ERC20TokenTransferEvent, GenesisOption, NormalTransaction};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use t_lib::log::{Level, instrument, trace};
 use tokio::task::JoinSet;
@@ -16,7 +17,7 @@ use crate::{
     error::{Error, Result, err},
     fetch::etherscan::{
         EtherscanFetch,
-        block::get_number::Params as GetBlockNumber,
+        block::get_number::{Closest, Params as GetBlockNumber},
         model::pagination::Pagination,
         transaction::{
             get_erc20_token_transfer_events::Params as GetTokenTx,
@@ -25,37 +26,34 @@ use crate::{
     },
     model::result::ResultData,
     share::{
-        contract::proxy_swap_v2::ProxySwapV2,
+        contract::ProxySwapV2,
         datetime::{current_date, current_time, get_date_time, parse_date},
     },
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Trade {
-    Send,
-    Recv,
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum Flag {
+    From,
+    Into,
 }
 
-impl Trade {
+impl Flag {
     #[rustfmt::skip]
-    pub fn try_get(tx: &NormalTransaction, address: &Address) -> Option<Self> {
-        if let GenesisOption::Some(hash) = &tx.from && hash == address {
-            return Some(Trade::Send);
+    pub fn try_get(tx: &NormalTransaction, addr: &Address) -> Option<Self> {
+        if let GenesisOption::Some(hash) = &tx.from && hash == addr {
+            return Some(Flag::From);
         }
-        if let Some(hash) = &tx.to && hash == address {
-            return Some(Trade::Recv);
+        if let Some(hash) = &tx.to && hash == addr {
+            return Some(Flag::Into);
         }
         None
     }
-
-    pub fn is_tx_fail(tx: &NormalTransaction) -> bool {
-        tx.is_error != "0" || tx.tx_receipt_status != "1"
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Units {
-    value: String,
+    pub value: String,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -65,10 +63,16 @@ pub enum Token {
 }
 
 impl Token {
-    pub const ULTI: U256 = U256::from_be_slice(&hex!("0x0e7779e698052f8fe56c415c3818fcf89de9ac6d"));
+    // ULTI
+    pub const ULTI_ADDRESS: Address = Address::new(Token::ULTI_BYTES);
+    pub const ULTI_BYTES: [u8; 20] = hex!("0x0e7779e698052f8fe56c415c3818fcf89de9ac6d");
     pub const ULTI_DECIMAL: u8 = 18;
-    pub const USDT: U256 = U256::from_be_slice(&hex!("0x55d398326f99059ff775485246999027b3197955"));
+    pub const ULTI_TOKEN: U256 = U256::from_be_slice(&Token::ULTI_BYTES);
+    // USDT
+    pub const USDT_ADDRESS: Address = Address::new(Token::USDT_BYTES);
+    pub const USDT_BYTES: [u8; 20] = hex!("0x55d398326f99059ff775485246999027b3197955");
     pub const USDT_DECIMAL: u8 = 18;
+    pub const USDT_TOKEN: U256 = U256::from_be_slice(&Token::USDT_BYTES);
 
     pub fn decimal(&self) -> u8 {
         match self {
@@ -86,55 +90,75 @@ impl Token {
 impl TryFrom<U256> for Token {
     type Error = Error;
 
-    fn try_from(contract: U256) -> Result<Self, Self::Error> {
-        match contract {
-            Self::ULTI => Ok(Self::Ulti),
-            Self::USDT => Ok(Self::Usdt),
-            contract => err!("Unknown Token Contract: 0x{contract:x}"),
+    fn try_from(token: U256) -> Result<Self, Self::Error> {
+        match token {
+            Self::ULTI_TOKEN => Ok(Self::Ulti),
+            Self::USDT_TOKEN => Ok(Self::Usdt),
+            token => err!("Unknown Token: 0x{token:x}"),
+        }
+    }
+}
+
+impl TryFrom<Address> for Token {
+    type Error = Error;
+
+    fn try_from(addr: Address) -> Result<Self, Self::Error> {
+        match addr {
+            Self::ULTI_ADDRESS => Ok(Self::Ulti),
+            Self::USDT_ADDRESS => Ok(Self::Usdt),
+            addr => err!("Unknown Token Address: 0x{addr:x}"),
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Swap {
-    pub from: U256,
+    pub flag: Flag,
     pub from_token: Token,
+    pub from_token_with_fee: U256,
     pub from_value: U256,
     pub from_units: Units,
-    pub into: U256,
     pub into_token: Token,
+    pub into_token_with_fee: U256,
     pub into_value: U256,
     pub into_units: Units,
-    pub usdt_value: U256,
-    pub usdt_units: Units,
+}
+
+impl Swap {
+    #[inline]
+    pub fn usdt_value(&self) -> U256 {
+        match self.flag {
+            Flag::From => self.from_value,
+            Flag::Into => U256::ZERO,
+        }
+    }
 }
 
 impl TryFrom<ProxySwapV2> for Swap {
     type Error = Error;
 
     fn try_from(call: ProxySwapV2) -> Result<Self, Self::Error> {
-        let ProxySwapV2 { from, from_value, into, into_value, .. } = call;
+        let ProxySwapV2 { fromTokenWithFee, fromAmt, intoTokenWithFee, minReturnAmt, .. } = call;
 
-        let from_token = from.try_into()?;
-        let into_token = into.try_into()?;
+        let from_token = fromTokenWithFee.try_into()?;
+        let into_token = intoTokenWithFee.try_into()?;
 
-        let usdt_value = match (from_token, into_token) {
-            (Token::Usdt, _) => from_value,
-            (_, Token::Usdt) => into_value,
+        let flag = match (from_token, into_token) {
+            (Token::Usdt, _) => Flag::From,
+            (_, Token::Usdt) => Flag::Into,
             (_, _) => return err!("USDT Token Not Found"),
         };
 
         let swap = Self {
-            from,
-            from_units: from_token.fromat_uint(from_value)?,
+            flag,
             from_token,
-            from_value,
-            into,
-            into_units: into_token.fromat_uint(into_value)?,
+            from_token_with_fee: fromTokenWithFee,
+            from_units: from_token.fromat_uint(fromAmt)?,
+            from_value: fromAmt,
             into_token,
-            into_value,
-            usdt_value,
-            usdt_units: Token::Usdt.fromat_uint(usdt_value)?,
+            into_token_with_fee: intoTokenWithFee,
+            into_units: into_token.fromat_uint(minReturnAmt)?,
+            into_value: minReturnAmt,
         };
         Ok(swap)
     }
@@ -165,11 +189,13 @@ pub struct Data {
     token_tx_list: Vec<ERC20TokenTransferEvent>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     repeat_token_tx: Vec<ERC20TokenTransferEvent>,
-    total: Units,
+    total_usdt: Units,
 }
 
 async fn get_data(params: GetTokenTx) -> Result<Data> {
     let GetTokenTx { address, contract, start_block, end_block, pagination } = params.clone();
+
+    let token = Token::try_from(contract)?;
 
     let get_normal_tx = GetNormalTx { address, start_block, end_block, pagination };
 
@@ -188,11 +214,11 @@ async fn get_data(params: GetTokenTx) -> Result<Data> {
     let mut normal_tx_list = Vec::with_capacity(raw_normal_tx.len());
     // TODO: filter token
     for tx in raw_normal_tx {
-        let Some(ty) = Trade::try_get(&tx, &address) else {
+        let Some(_flag) = Flag::try_get(&tx, &address) else {
             normal_tx_list.push(invalid_tx!(tx, "Unknown Tx Trade"));
             continue;
         };
-        if Trade::is_tx_fail(&tx) {
+        if tx.is_error != "0" || tx.tx_receipt_status != "1" {
             normal_tx_list.push(invalid_tx!(tx, "Tx Trade Fail"));
             continue;
         }
@@ -203,7 +229,7 @@ async fn get_data(params: GetTokenTx) -> Result<Data> {
                     // TODO: Swap method_id
                     Some(method_id) if method_id == &ProxySwapV2::METHOD_ID => {
                         match token_tx_map.get(hash) {
-                            Some(token_tx) => {
+                            Some(_token_tx) => {
                                 let call = ProxySwapV2::abi_decode(&tx.input)?;
                                 match Swap::try_from(call) {
                                     Ok(swap) => NormalTx { swap: Some(swap), cause: None, tx },
@@ -221,9 +247,9 @@ async fn get_data(params: GetTokenTx) -> Result<Data> {
         normal_tx_list.push(normal_tx);
     }
 
-    let total = normal_tx_list.iter().fold(U256::ZERO, |mut acc, tx| {
+    let total_usdt = normal_tx_list.iter().fold(U256::ZERO, |mut acc, tx| {
         if let Some(swap) = &tx.swap {
-            acc += swap.usdt_value;
+            acc += swap.usdt_value();
         }
         acc
     });
@@ -232,7 +258,7 @@ async fn get_data(params: GetTokenTx) -> Result<Data> {
         normal_tx_list,
         token_tx_list: token_tx_map.into_values().collect(),
         repeat_token_tx,
-        total: Token::Usdt.fromat_uint(total)?,
+        total_usdt: Token::Usdt.fromat_uint(total_usdt + total_usdt)?,
     };
     Ok(data)
 }
@@ -246,12 +272,12 @@ pub async fn get_tx(Query(params): Query<GetTokenTx>) -> ResultData<Data> {
 #[instrument(level = Level::TRACE, skip_all, err)]
 pub async fn get_tx_by_date_range(
     Query(params): Query<GetTokenTxByDate>,
-) -> ResultData<HashMap<String, Data>> {
+) -> ResultData<IndexMap<String, Data>> {
     let ranges = params.get_block_ranges().await?;
 
     let GetTokenTxByDate { address, contract, pagination, .. } = params;
 
-    let mut tx_map = HashMap::new();
+    let mut tx_map = IndexMap::new();
     for (date, start_block, end_block) in ranges {
         let get_token_tx = GetTokenTx { address, contract, start_block, end_block, pagination };
         let data = get_data(get_token_tx).await?;
@@ -261,9 +287,9 @@ pub async fn get_tx_by_date_range(
 }
 
 #[instrument(level = Level::TRACE, skip_all, err)]
-pub async fn get_total_usdt_unit(Query(params): Query<GetTokenTx>) -> ResultData<String> {
+pub async fn get_total_usdt_unit(Query(params): Query<GetTokenTx>) -> ResultData<Units> {
     let data = get_data(params).await?;
-    Ok(data.total.value.into())
+    Ok(data.total_usdt.into())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -286,9 +312,8 @@ impl GetTokenTxByDate {
             into_time = now
         }
 
-        let from =
-            GetBlockNumber { timestamp: from_time, closest: "before".into() }.fetch().await?;
-        let into = GetBlockNumber { timestamp: into_time, closest: "after".into() }.fetch().await?;
+        let from = GetBlockNumber::new(from_time, Closest::Next).fetch().await?;
+        let into = GetBlockNumber::new(into_time, Closest::Prev).fetch().await?;
         let date_fmt = format!("{}", date.format("%Y-%m-%d"));
         Ok((date_fmt, from, into))
     }
@@ -330,20 +355,19 @@ impl GetTokenTxByDate {
 #[instrument(level = Level::TRACE, skip_all, err)]
 pub async fn get_total_usdt_unit_by_date_range(
     Query(params): Query<GetTokenTxByDate>,
-) -> ResultData<HashMap<String, String>> {
+) -> ResultData<IndexMap<String, Units>> {
     let ranges = params.get_block_ranges().await?;
 
     let GetTokenTxByDate { address, contract, pagination, .. } = params;
 
-    let mut usdt_units = HashMap::new();
-    let mut handler: JoinSet<Result<(String, String)>> = JoinSet::new();
+    let mut usdt_units = IndexMap::new();
+    let mut handler: JoinSet<Result<(String, Units)>> = JoinSet::new();
     for (date, start_block, end_block) in ranges {
         handler.spawn(async move {
             let get_token_tx = GetTokenTx { address, contract, start_block, end_block, pagination };
-
             trace!("Get date: {date:?} transaction");
             let data = get_data(get_token_tx).await?;
-            Ok((date, data.total.value))
+            Ok((date, data.total_usdt))
         });
     }
 
