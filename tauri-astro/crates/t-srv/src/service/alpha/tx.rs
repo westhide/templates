@@ -315,6 +315,7 @@ impl GetTokenTxByDate {
         let from = GetBlockNumber::new(from_time, Closest::Next).fetch().await?;
         let into = GetBlockNumber::new(into_time, Closest::Prev).fetch().await?;
         let date_fmt = format!("{}", date.format("%Y-%m-%d"));
+        trace!("{date_fmt} block: {from}..{into}");
         Ok((date_fmt, from, into))
     }
 
@@ -377,4 +378,47 @@ pub async fn get_total_usdt_unit_by_date_range(
     }
 
     Ok(usdt_units.into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn batch_query() {
+        let addrs = vec![
+            "0x6b29f3C0360e68e41d828D347B0390eB10F26f20",
+            "0xA7bfa85c6243d5DcEAE1A8465917f2CB3355BD4d",
+            "0xc63bCcfc9DAE113F137f3137cB91FCA709269970",
+            "0xdB2683192ed191009903D627b9407D551706dCE2",
+            "0x6FF65A8E18FC5E4DeD66F6eECFb67bfD299b2F3B",
+            "0x9221ecE8Eaa6a7bA05A2f424FCDDB731Ff44c9f9",
+            "0x9009e7B4cA28825E1401F221BEBd365aAa3a6705",
+            "0x38a448f4f03cf1b8b263e3004a3dfd6cfeeaeabb",
+            "0xe56b5D70CF77D12166d22b4402Bf652Af1AFAd7D",
+            "0x8a9227D31255635cF992FC3760dED9822Dc990eB",
+            "0xac1d9644b03901db9b9de2b3ea26226c6384db59",
+            "0x738a4800Fb161A93f8A234CDd11C5f42B754b759",
+            "0x5cC82990B1Fff2A88368762D6F09e9394b9983d1",
+            "0x77c4511b5c0F58B62D306Df80816e1BDf33f0939",
+            "0x87bBB74511570cfb9BfCd02F1acfEF024d398Fc4",
+        ];
+
+        for addr in addrs {
+            println!("query: {addr}");
+            let ret = get_total_usdt_unit_by_date_range(Query(GetTokenTxByDate {
+                address: addr.parse().unwrap(),
+                contract: "0x0e7779e698052f8fe56c415c3818fcf89de9ac6d".parse().unwrap(),
+                start_date: "2025-08-10".into(),
+                end_date: "2025-08-15".into(),
+                pagination: None,
+            }))
+            .await;
+            let msg = match ret {
+                Ok(r) => serde_json::to_string(&r).unwrap(),
+                Err(err) => format!("Failed: {addr}, {err}"),
+            };
+            println!("{msg:?}");
+        }
+    }
 }

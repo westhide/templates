@@ -20,7 +20,7 @@ where
     let router = Router::new()
         .route("/", get(index))
         .route("/version", get(version::get))
-        .route("/etherscan/get_block_number", get( GetBlockNumber::get))
+        .route("/etherscan/get_block_number", get(GetBlockNumber::get))
         .route("/etherscan/get_normal_tx", get(GetNormalTx::get))
         .route("/etherscan/get_internal_tx", get(GetInternalTx::get))
         .route("/etherscan/get_token_tx", get(GetTokenTx::get))
