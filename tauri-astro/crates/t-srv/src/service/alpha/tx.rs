@@ -258,7 +258,7 @@ async fn get_data(params: GetTokenTx) -> Result<Data> {
         normal_tx_list,
         token_tx_list: token_tx_map.into_values().collect(),
         repeat_token_tx,
-        total_usdt: Token::Usdt.fromat_uint(total_usdt + total_usdt)?,
+        total_usdt: Token::Usdt.fromat_uint(total_usdt)?,
     };
     Ok(data)
 }
