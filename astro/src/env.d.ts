@@ -1,13 +1,11 @@
 declare namespace NodeJS {
-	interface ProcessEnv {
-		readonly PUBLIC_SITE_URL: string;
-	}
+	interface ProcessEnv extends ImportMetaEnv {}
 }
 
-interface ImportMetaEnv {
+export interface ImportMetaEnv {
 	readonly PUBLIC_SITE_URL: string;
 }
 
-interface ImportMeta {
+export interface ImportMeta {
 	readonly env: ImportMetaEnv;
 }

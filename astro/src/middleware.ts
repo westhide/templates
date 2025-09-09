@@ -1,5 +1,8 @@
 import { defineMiddleware } from "astro:middleware";
+import type { APIContext, MiddlewareNext } from "astro";
 
-export const onRequest = defineMiddleware((_, next) => {
+function middleware(_ctx: APIContext, next: MiddlewareNext) {
 	return next();
-});
+}
+
+export const onRequest = defineMiddleware(middleware);
