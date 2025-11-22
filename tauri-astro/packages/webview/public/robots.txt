@@ -1,0 +1,6 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow: /
+
+# TODO: Site Domain
+Sitemap: https://127.0.0.1/sitemap.xml

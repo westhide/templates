@@ -1,6 +1,5 @@
 services:
-    bsc-alpha:
-        container_name: bsc-alpha-runtime
+    dev:
         platform: linux/amd64
         build:
             context: .

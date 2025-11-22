@@ -1,0 +1,5 @@
+# Rust
+/target/
+
+# Tauri
+/gen/schemas

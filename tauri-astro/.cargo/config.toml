@@ -1,15 +1,18 @@
 [env]
-RPC_PROTO_DIR = { value = "proto", relative = true }
+PROTOWIRE_DIR = { value = "protowire", relative = true }
+PROTO_GEN_DIR = { value = "proto_gen", relative = true }
 
-CONFIG_FILE    = { value = "crates/t-srv/src/share/config.toml", relative = true }
-TSRV_SHARE_DIR = { value = "crates/t-srv/src/share", relative = true }
+CONFIG_FILE = { value = "config/config.toml", relative = true }
 
-RUST_LOG = 'trace,hyper_util=info,reqwest=info'
+RUST_LOG = 'trace'
 
 # MIMALLOC_SHOW_STATS = '1'
 # MIMALLOC_VERBOSE    = '1'
 
 
-# [target.x86_64-unknown-linux-gnu]
-# linker    = "clang"
-# rustflags = ["-Clink-arg=-Wl,--no-rosegment", "-Clink-arg=-fuse-ld=lld"]
+[target.x86_64-unknown-linux-gnu]
+rustflags = ["-Ctarget-cpu=native"]
+
+
+[net]
+git-fetch-with-cli = true
